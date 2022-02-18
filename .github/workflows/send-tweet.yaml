@@ -1,0 +1,15 @@
+name: 'Send tweet'
+on:
+  schedule:
+    - cron: '0 */8 * * *'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version-file: '.nvmrc'
+      - run: npm ci --production
+      - run: npm run start
