@@ -1,5 +1,5 @@
 export function getTitle(doc) {
-  const MAX_TITLE_LENGTH = 40;
+  const MAX_TITLE_LENGTH = 50;
 
   let [, title] = /<h1>(.*?)<\/h1>/ig.exec(doc) || [, ''];
 
@@ -7,11 +7,7 @@ export function getTitle(doc) {
     title = title.slice(0, MAX_TITLE_LENGTH) + '…';
   }
 
-  if (title) {
-    return `Random K8s: ${title}`;
-  }
-
-  return `Random K8s`;
+  return title;
 }
 
 export function getDescription(doc) {

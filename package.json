@@ -19,6 +19,7 @@
   "homepage": "https://github.com/stefanbuck/random-k8s#readme",
   "dependencies": {
     "got": "^12.0.1",
+    "twit": "^2.2.11",
     "twitter-text": "^3.1.0"
   }
 }

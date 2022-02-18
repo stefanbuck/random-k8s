@@ -1,5 +1,6 @@
 import got from 'got';
 import twitter from 'twitter-text'
+import Twit from 'twit'
 import { readFileSync, writeFileSync } from 'fs';
 import { truncate, getDescription, getTitle, wildcardEqual } from './uitls.mjs';
 
@@ -40,7 +41,7 @@ function getTweetableUrls() {
   })
 }
 
-async function getMetaForPage(url) {
+async function getPageDetails(url) {
   const html = await got.get(url).text();
   const doc = html.replace(/\n/g, ' ');
 
@@ -67,7 +68,26 @@ async function getMetaForPage(url) {
     throw new Error('Tweet is too long');
   }
 
-  console.log(tweet);
+  sendTweet(tweet);
+}
+
+function sendTweet(tweet) {
+  var TwitterApi = new Twit({
+    consumer_key: process.env['TWITTER_CONSUMER_KEY'],
+    consumer_secret: process.env['TWITTER_CONSUMER_SECRET'],
+    access_token: process.env['TWITTER_ACCESS_TOKEN'],
+    access_token_secret: process.env['TWITTER_ACCESS_TOKEN_SECRET'],
+    strictSSL: true,
+  })
+
+  TwitterApi.post('statuses/update', { status: tweet }, function (err, data, response) {
+    if (err) {
+      console.log('Error: ', err.toString());
+      process.exit(1);
+    }
+
+    console.log('Tweet sent');
+  })
 }
 
 function init() {
@@ -91,7 +111,7 @@ function init() {
     const link = links[Math.floor(Math.random() * links.length)];
 
     try {
-      await getMetaForPage(link);
+      await getPageDetails(link);
     } catch (err) {
       retryCount++;
       console.log('Error: ', err.toString());
