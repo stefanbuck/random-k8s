@@ -1,0 +1,20 @@
+name: 'Update sitemap'
+on:
+  schedule:
+    - cron: '0 14 * * 5'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: curl https://kubernetes.io/en/sitemap.xml > sitemap.xml
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com" && \
+          git config --global user.name "github-actions[bot]" && \
+          git add sitemap.xml && \
+          git diff-index --quiet HEAD || git commit -m "Update sitemap" && \
+          git push origin main
