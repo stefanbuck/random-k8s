@@ -1,8 +1,12 @@
+import { createRequire } from "module";
 import got from 'got';
 import twitter from 'twitter-text'
 import Twit from 'twit'
 import { readFileSync, writeFileSync } from 'fs';
 import { truncate, getDescription, getTitle, wildcardEqual } from './uitls.mjs';
+
+const require = createRequire(import.meta.url);
+const glossary = require('./glossary.json');
 
 const allow = [
   'https://kubernetes.io/docs/concepts/*',
@@ -18,6 +22,7 @@ const allow = [
 ]
 
 const ignore = [
+  'https://kubernetes.io/docs/reference/glossary/',
   'https://kubernetes.io/docs/tasks/tools/*',
 ]
 
@@ -47,28 +52,40 @@ async function getPageDetails(url) {
 
   const title = getTitle(doc);
   const description = getDescription(doc);
+  return { title, description, url };
+}
+
+function prepareTweet({ title, description, url = '' }) {
 
   const hashtags = '#kubernetes'
   const newLines = '\n\n';
 
-  let tweet = [title, url, description, hashtags].filter(Boolean).join(newLines)
+  let tweet = [title, description, url, hashtags].filter(Boolean).join(newLines)
 
   const { valid, validRangeEnd } = twitter.parseTweet(tweet);
 
-  tweet = [title, url, description].filter(Boolean).join(newLines)
+  tweet = [title, description].filter(Boolean).join(newLines)
 
+  let urlOffset = 0;
+  if (url) {
+    // A URL of any length will be altered to 23 characters,
+    // even if the link itself is less than 23 characters long.
+    const URL_LENGTH = 23;
 
-  if (!valid) {
-    tweet = truncate(tweet, validRangeEnd - hashtags.length - newLines.length);
+    urlOffset = URL_LENGTH + newLines.length;
   }
 
-  tweet = `${tweet}${newLines}#kubernetes`;
+  if (!valid) {
+    tweet = truncate(tweet, validRangeEnd - urlOffset - hashtags.length - newLines.length);
+  }
+
+  tweet = `${tweet}${url ? newLines + url : ''}${newLines}#kubernetes`;
 
   if (!twitter.parseTweet(tweet).valid) {
     throw new Error('Tweet is too long');
   }
 
-  sendTweet(tweet);
+  return tweet;
 }
 
 function sendTweet(tweet) {
@@ -91,12 +108,7 @@ function sendTweet(tweet) {
 }
 
 function init() {
-  const links = getTweetableUrls();
-
-  if (links.length === 0) {
-    console.log('Sitemap is empty');
-    process.exit(1);
-  }
+  const links = [...glossary, ...getTweetableUrls()];
 
   const RETRY_LIMIT = 10;
   let retryCount = 0;
@@ -111,7 +123,24 @@ function init() {
     const link = links[Math.floor(Math.random() * links.length)];
 
     try {
-      await getPageDetails(link);
+      let tweetBody;
+
+      if (typeof link === 'string') {
+        // Random article tweet
+        const { title, description, url } = await getPageDetails(link);
+        tweetBody = prepareTweet({ title, description, url })
+
+      } else {
+        // Glossary tweet
+        const { title, description, url } = link;
+        tweetBody = prepareTweet({ title, description })
+
+        if (tweetBody.includes('…')) {
+          tweetBody = prepareTweet({ title, description, url })
+        }
+      }
+
+      sendTweet(tweetBody);
     } catch (err) {
       retryCount++;
       console.log('Error: ', err.toString());
