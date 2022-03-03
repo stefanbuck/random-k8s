@@ -24,6 +24,7 @@ const allow = [
 const ignore = [
   'https://kubernetes.io/docs/reference/glossary/',
   'https://kubernetes.io/docs/tasks/tools/*',
+  'https://kubernetes.io/docs/reference/config-api/*',
 ]
 
 function getTweetableUrls() {
