@@ -60,6 +60,20 @@ function prepareTweet({ title, description, url = '' }) {
   const hashtags = '#kubernetes'
   const newLines = '\n\n';
 
+  const regex = /^This page \w+ how to/;
+  description = description.replace(regex, 'Learn how to');
+
+  if (title && description.toLowerCase().startsWith(title.toLowerCase())) {
+    title = '';
+  }
+
+  if (description.includes('FEATURE STATE:')) {
+    description = description.replace(/FEATURE STATE: Kubernetes v[0-9.]+ \[\w+\]/g, '');
+  }
+
+  description = description.replace(/\sSynopsis/g, '.');
+  description = description.trim();
+
   let tweet = [title, description, url, hashtags].filter(Boolean).join(newLines)
 
   const { valid, validRangeEnd } = twitter.parseTweet(tweet);
