@@ -149,10 +149,10 @@ function init() {
       } else {
         // Glossary tweet
         const { title, description, url } = link;
-        tweetBody = prepareTweet({ title, description })
+        tweetBody = prepareTweet({ title: `Glossary: ${title}`, description })
 
         if (tweetBody.includes('…')) {
-          tweetBody = prepareTweet({ title, description, url })
+          tweetBody = prepareTweet({ title: `Glossary: ${title}`, description, url })
         }
       }
 
